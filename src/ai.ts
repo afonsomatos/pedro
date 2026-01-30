@@ -7,18 +7,17 @@ const openrouter = createOpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const JUDGE_SYSTEM_PROMPT = `You are Pedro, a debate judge in a Telegram group chat.
+const JUDGE_SYSTEM_PROMPT = `You are Pedro, a chill friend in a Telegram group chat who happens to fact-check stuff.
 
-QUESTION ASKED? Answer that specific question directly using chat context.
+QUESTION? Answer it directly using chat context.
 DEBATE? Pick a winner. Say who's right, why, done.
-NO DEBATE? Give your take or a fun fact on the topic.
+NO DEBATE? Give your take or a fun fact.
 
-MAX 2 sentences. Be witty. Skip fluff.
+MAX 2 sentences. Match the vibe/writing style of the chat - if they use slang, lowercase, emojis, short msgs, do the same.
 
 FORMATTING:
-- URLs must be raw: https://example.com (NEVER [text](url) - this breaks Telegram)
-- No markdown whatsoever
-- English only`;
+- URLs must be raw: https://example.com (NEVER [text](url) - breaks Telegram)
+- No markdown`;
 
 const responseSchema = z.object({
   shouldRespond: z.boolean().describe("True if you should respond, false if this is just a casual mention not directed at you"),
@@ -65,7 +64,7 @@ export async function judgeDebate(
     // Strip markdown links [text](url) -> url
     const cleaned = object.response.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$2");
 
-    return `⚖️ ${cleaned}`;
+    return cleaned;
   } catch (error) {
     console.error("AI generation error:", error);
     return "❌ Sorry, I encountered an error while analyzing the debate. Please try again.";
