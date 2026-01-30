@@ -50,7 +50,10 @@ bot.on("message:text", async (ctx) => {
 
       // Only reply if we got a real response (not SKIP)
       if (response && response !== "SKIP") {
-        await ctx.reply(response, { link_preview_options: { is_disabled: true } });
+        await ctx.reply(response, {
+          reply_parameters: { message_id: ctx.message.message_id },
+          link_preview_options: { is_disabled: true },
+        });
       }
     } catch (error) {
       console.error("Mention response error:", error);
