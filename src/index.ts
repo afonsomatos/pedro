@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { Bot } from "grammy";
-import { helpCommand } from "./commands/help.js";
 import { addMessage, getMessages } from "./debate.js";
 import { judgeDebate } from "./ai.js";
 
@@ -10,9 +9,6 @@ if (!token) {
 }
 
 const bot = new Bot(token);
-
-// Register commands
-bot.command("help", helpCommand);
 
 // Store bot username for mention detection
 let botUsername = "";
