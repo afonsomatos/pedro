@@ -28,13 +28,14 @@ export async function judgeCommand(ctx: CommandContext<Context>): Promise<void> 
     await ctx.api.deleteMessage(chatId, thinkingMsg.message_id).catch(() => {});
 
     // Split long messages if needed (Telegram limit is 4096 chars)
+    const replyOptions = { link_preview_options: { is_disabled: true } };
     if (verdict.length > 4000) {
       const parts = splitMessage(verdict, 4000);
       for (const part of parts) {
-        await ctx.reply(part);
+        await ctx.reply(part, replyOptions);
       }
     } else {
-      await ctx.reply(verdict);
+      await ctx.reply(verdict, replyOptions);
     }
   } catch (error) {
     console.error("Judge command error:", error);
