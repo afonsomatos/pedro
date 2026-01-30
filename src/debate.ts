@@ -1,59 +1,35 @@
+import Redis from "ioredis";
+
 interface Message {
   sender: string;
   text: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 const MAX_MESSAGES_PER_CHAT = 50;
 
-// In-memory storage: chatId -> messages
-const chatHistory = new Map<number, Message[]>();
-// Track last judge time per chat
-const lastJudgeTime = new Map<number, Date>();
+const redis = new Redis(process.env.REDIS_URL || "");
 
-export function addMessage(chatId: number, sender: string, text: string): void {
-  if (!chatHistory.has(chatId)) {
-    chatHistory.set(chatId, []);
-  }
+function chatKey(chatId: number): string {
+  return `chat:${chatId}:messages`;
+}
 
-  const messages = chatHistory.get(chatId)!;
-  messages.push({
+export async function addMessage(chatId: number, sender: string, text: string): Promise<void> {
+  const message: Message = {
     sender,
     text,
-    timestamp: new Date(),
-  });
+    timestamp: new Date().toISOString(),
+  };
 
-  // Keep only the last MAX_MESSAGES_PER_CHAT messages
-  if (messages.length > MAX_MESSAGES_PER_CHAT) {
-    messages.shift();
-  }
+  // Push to list and trim to max size
+  await redis.lpush(chatKey(chatId), JSON.stringify(message));
+  await redis.ltrim(chatKey(chatId), 0, MAX_MESSAGES_PER_CHAT - 1);
 }
 
-export function getMessages(chatId: number): Message[] {
-  return chatHistory.get(chatId) || [];
-}
-
-export function getNewMessageCount(chatId: number): number {
-  const messages = chatHistory.get(chatId) || [];
-  const lastJudge = lastJudgeTime.get(chatId);
-  if (lastJudge) {
-    return messages.filter((m) => m.timestamp > lastJudge).length;
-  }
-  return messages.length;
-}
-
-export function getLastJudgeTime(chatId: number): Date | undefined {
-  return lastJudgeTime.get(chatId);
-}
-
-export function markJudged(chatId: number): void {
-  lastJudgeTime.set(chatId, new Date());
-}
-
-export function clearMessages(chatId: number): void {
-  chatHistory.delete(chatId);
-}
-
-export function getMessageCount(chatId: number): number {
-  return chatHistory.get(chatId)?.length || 0;
+export async function getMessages(chatId: number): Promise<Array<{ sender: string; text: string; timestamp: Date }>> {
+  const raw = await redis.lrange(chatKey(chatId), 0, -1);
+  return raw
+    .map((m) => JSON.parse(m) as Message)
+    .map((m) => ({ ...m, timestamp: new Date(m.timestamp) }))
+    .reverse(); // lpush adds to front, so reverse to get chronological order
 }

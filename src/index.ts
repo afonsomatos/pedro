@@ -29,7 +29,7 @@ bot.on("message:text", async (ctx) => {
     (ctx.from?.username ? ` (@${ctx.from.username})` : "");
 
   // Track the message
-  addMessage(chatId, sender, text);
+  await addMessage(chatId, sender, text);
 
   // Check if bot is mentioned or replied to
   const mentionPattern = new RegExp(`@${botUsername}\\b`, "i");
@@ -37,7 +37,7 @@ bot.on("message:text", async (ctx) => {
   const isReply = ctx.message.reply_to_message?.from?.id === ctx.me.id;
 
   if (isMentioned || isReply) {
-    const messages = getMessages(chatId);
+    const messages = await getMessages(chatId);
     if (messages.length === 0) {
       return;
     }
