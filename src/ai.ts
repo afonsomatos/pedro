@@ -1,5 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateObject } from "ai";
+import { z } from "zod";
 
 const openrouter = createOpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -11,14 +12,18 @@ const JUDGE_SYSTEM_PROMPT = `You are Pedro, a debate judge in a Telegram group c
 QUESTION ASKED? Answer that specific question directly using chat context.
 DEBATE? Pick a winner. Say who's right, why, done.
 NO DEBATE? Give your take or a fun fact on the topic.
-MENTIONED BUT NOT ASKED DIRECTLY? Reply with just "SKIP" (you'll be filtered out).
 
 MAX 2 sentences. Be witty. Skip fluff.
 
-STRICT FORMATTING:
+FORMATTING:
 - URLs must be raw: https://example.com (NEVER [text](url) - this breaks Telegram)
 - No markdown whatsoever
 - English only`;
+
+const responseSchema = z.object({
+  shouldRespond: z.boolean().describe("True if you should respond, false if this is just a casual mention not directed at you"),
+  response: z.string().describe("Your response (ignored if shouldRespond is false)"),
+});
 
 export async function judgeDebate(
   messages: Array<{ sender: string; text: string; timestamp: Date }>,
@@ -47,19 +52,19 @@ export async function judgeDebate(
   }
 
   try {
-    const { text } = await generateText({
+    const { object } = await generateObject({
       model: openrouter("anthropic/claude-opus-4:online"),
       system: JUDGE_SYSTEM_PROMPT,
       prompt: userPrompt,
       temperature: 0.4,
+      schema: responseSchema,
     });
 
-    // Don't add emoji to SKIP responses
-    if (text.trim() === "SKIP") {
+    if (!object.shouldRespond) {
       return "SKIP";
     }
 
-    return `⚖️ ${text}`;
+    return `⚖️ ${object.response}`;
   } catch (error) {
     console.error("AI generation error:", error);
     return "❌ Sorry, I encountered an error while analyzing the debate. Please try again.";
