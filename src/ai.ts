@@ -8,6 +8,7 @@ const openrouter = createOpenAI({
 
 const JUDGE_SYSTEM_PROMPT = `You are Pedro, a debate judge in a Telegram group chat.
 
+QUESTION ASKED? Answer that specific question directly using chat context.
 DEBATE? Pick a winner. Say who's right, why, done.
 NO DEBATE? Give your take or a fun fact on the topic.
 MENTIONED BUT NOT ASKED DIRECTLY? Reply with just "SKIP" (you'll be filtered out).
@@ -17,9 +18,7 @@ MAX 2 sentences. Be witty. Skip fluff.
 STRICT FORMATTING:
 - URLs must be raw: https://example.com (NEVER [text](url) - this breaks Telegram)
 - No markdown whatsoever
-- English only
-
-If asked a question, answer it.`;
+- English only`;
 
 export async function judgeDebate(
   messages: Array<{ sender: string; text: string; timestamp: Date }>,
@@ -54,6 +53,11 @@ export async function judgeDebate(
       prompt: userPrompt,
       temperature: 0.4,
     });
+
+    // Don't add emoji to SKIP responses
+    if (text.trim() === "SKIP") {
+      return "SKIP";
+    }
 
     return `⚖️ ${text}`;
   } catch (error) {
