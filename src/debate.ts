@@ -8,6 +8,8 @@ const MAX_MESSAGES_PER_CHAT = 50;
 
 // In-memory storage: chatId -> messages
 const chatHistory = new Map<number, Message[]>();
+// Track last judge time per chat
+const lastJudgeTime = new Map<number, Date>();
 
 export function addMessage(chatId: number, sender: string, text: string): void {
   if (!chatHistory.has(chatId)) {
@@ -28,7 +30,16 @@ export function addMessage(chatId: number, sender: string, text: string): void {
 }
 
 export function getMessages(chatId: number): Message[] {
-  return chatHistory.get(chatId) || [];
+  const messages = chatHistory.get(chatId) || [];
+  const lastJudge = lastJudgeTime.get(chatId);
+  if (lastJudge) {
+    return messages.filter((m) => m.timestamp > lastJudge);
+  }
+  return messages;
+}
+
+export function markJudged(chatId: number): void {
+  lastJudgeTime.set(chatId, new Date());
 }
 
 export function clearMessages(chatId: number): void {
