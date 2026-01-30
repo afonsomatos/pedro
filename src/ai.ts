@@ -51,6 +51,7 @@ export async function judgeDebate(
       model: openrouter("anthropic/claude-opus-4:online"),
       system: JUDGE_SYSTEM_PROMPT,
       prompt: userPrompt,
+      temperature: 0.4,
     });
 
     return `⚖️ ${text}`;
