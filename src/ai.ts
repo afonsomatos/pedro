@@ -64,7 +64,10 @@ export async function judgeDebate(
       return "SKIP";
     }
 
-    return `⚖️ ${object.response}`;
+    // Strip markdown links [text](url) -> url
+    const cleaned = object.response.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$2");
+
+    return `⚖️ ${cleaned}`;
   } catch (error) {
     console.error("AI generation error:", error);
     return "❌ Sorry, I encountered an error while analyzing the debate. Please try again.";

@@ -33,10 +33,16 @@ export async function judgeCommand(ctx: CommandContext<Context>): Promise<void> 
 
   try {
     const verdict = await judgeDebate(messages, question, lastJudgeTime);
-    markJudged(chatId);
 
-    // Delete thinking message and send verdict
+    // Delete thinking message
     await ctx.api.deleteMessage(chatId, thinkingMsg.message_id).catch(() => {});
+
+    // Don't send SKIP responses from /judge command
+    if (verdict === "SKIP") {
+      return;
+    }
+
+    markJudged(chatId);
 
     // Split long messages if needed (Telegram limit is 4096 chars)
     const replyOptions = { link_preview_options: { is_disabled: true } };
