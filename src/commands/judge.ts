@@ -1,12 +1,12 @@
 import { CommandContext, Context } from "grammy";
-import { getMessages, markJudged } from "../debate.js";
+import { getMessages, getNewMessageCount, getLastJudgeTime, markJudged } from "../debate.js";
 import { judgeDebate } from "../ai.js";
 
 export async function judgeCommand(ctx: CommandContext<Context>): Promise<void> {
   const chatId = ctx.chat.id;
-  const messages = getMessages(chatId);
+  const newCount = getNewMessageCount(chatId);
 
-  if (messages.length === 0) {
+  if (newCount === 0) {
     await ctx.reply(
       "📭 No new messages to judge! Have a debate first, then call /judge again."
     );
@@ -14,12 +14,14 @@ export async function judgeCommand(ctx: CommandContext<Context>): Promise<void> 
   }
 
   const question = ctx.match?.toString().trim() || undefined;
+  const lastJudgeTime = getLastJudgeTime(chatId);
 
   // Send "thinking" message
-  const thinkingMsg = await ctx.reply(`🤔 Analyzing ${messages.length} messages...`);
+  const thinkingMsg = await ctx.reply(`🤔 Analyzing ${newCount} new messages...`);
 
   try {
-    const verdict = await judgeDebate(messages, question);
+    const messages = getMessages(chatId);
+    const verdict = await judgeDebate(messages, question, lastJudgeTime);
     markJudged(chatId);
 
     // Delete thinking message and send verdict

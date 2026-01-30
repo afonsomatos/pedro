@@ -30,12 +30,20 @@ export function addMessage(chatId: number, sender: string, text: string): void {
 }
 
 export function getMessages(chatId: number): Message[] {
+  return chatHistory.get(chatId) || [];
+}
+
+export function getNewMessageCount(chatId: number): number {
   const messages = chatHistory.get(chatId) || [];
   const lastJudge = lastJudgeTime.get(chatId);
   if (lastJudge) {
-    return messages.filter((m) => m.timestamp > lastJudge);
+    return messages.filter((m) => m.timestamp > lastJudge).length;
   }
-  return messages;
+  return messages.length;
+}
+
+export function getLastJudgeTime(chatId: number): Date | undefined {
+  return lastJudgeTime.get(chatId);
 }
 
 export function markJudged(chatId: number): void {

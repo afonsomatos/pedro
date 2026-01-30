@@ -16,7 +16,8 @@ If a question is asked, answer it based on the conversation context while still 
 
 export async function judgeDebate(
   messages: Array<{ sender: string; text: string; timestamp: Date }>,
-  question?: string
+  question?: string,
+  lastJudgeTime?: Date
 ): Promise<string> {
   if (messages.length === 0) {
     return "📭 No messages to judge! Start a debate and then call /judge again.";
@@ -28,11 +29,12 @@ export async function judgeDebate(
         hour: "2-digit",
         minute: "2-digit",
       });
-      return `[${time}] ${m.sender}: ${m.text}`;
+      const isNew = !lastJudgeTime || m.timestamp > lastJudgeTime;
+      return `${isNew ? "[NEW] " : ""}[${time}] ${m.sender}: ${m.text}`;
     })
     .join("\n");
 
-  let userPrompt = `Here is the recent conversation to analyze:\n\n${formattedMessages}`;
+  let userPrompt = `Here is the conversation. Messages marked [NEW] are since the last judgment - focus your verdict on those, but use older messages for context:\n\n${formattedMessages}`;
 
   if (question) {
     userPrompt += `\n\nUser's question: ${question}`;
