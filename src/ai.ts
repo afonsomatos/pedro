@@ -27,11 +27,10 @@ const responseSchema = z.object({
 
 export async function judgeDebate(
   messages: Array<{ sender: string; text: string; timestamp: Date }>,
-  question?: string,
-  lastJudgeTime?: Date
+  question?: string
 ): Promise<string> {
   if (messages.length === 0) {
-    return "📭 No messages to judge! Start a debate and then call /judge again.";
+    return "SKIP";
   }
 
   const formattedMessages = messages
@@ -40,12 +39,11 @@ export async function judgeDebate(
         hour: "2-digit",
         minute: "2-digit",
       });
-      const isNew = !lastJudgeTime || m.timestamp > lastJudgeTime;
-      return `${isNew ? "[NEW] " : ""}[${time}] ${m.sender}: ${m.text}`;
+      return `[${time}] ${m.sender}: ${m.text}`;
     })
     .join("\n");
 
-  let userPrompt = `Here is the conversation. Messages marked [NEW] are since the last judgment - focus your verdict on those, but use older messages for context:\n\n${formattedMessages}`;
+  let userPrompt = `Here is the conversation:\n\n${formattedMessages}`;
 
   if (question) {
     userPrompt += `\n\nUser's question: ${question}`;

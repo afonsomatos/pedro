@@ -2,8 +2,7 @@ import "dotenv/config";
 import { Bot } from "grammy";
 import { startCommand } from "./commands/start.js";
 import { helpCommand } from "./commands/help.js";
-import { judgeCommand } from "./commands/judge.js";
-import { addMessage, clearMessages, getMessageCount, getMessages, getLastJudgeTime, markJudged } from "./debate.js";
+import { addMessage, getMessages } from "./debate.js";
 import { judgeDebate } from "./ai.js";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -16,14 +15,6 @@ const bot = new Bot(token);
 // Register commands
 bot.command("start", startCommand);
 bot.command("help", helpCommand);
-bot.command("judge", judgeCommand);
-
-bot.command("clear", async (ctx) => {
-  const chatId = ctx.chat.id;
-  const count = getMessageCount(chatId);
-  clearMessages(chatId);
-  await ctx.reply(`🧹 Cleared ${count} messages. Ready for a fresh debate!`);
-});
 
 // Store bot username for mention detection
 let botUsername = "";
@@ -61,12 +52,10 @@ bot.on("message:text", async (ctx) => {
     const question = text.replace(mentionPattern, "").trim();
 
     try {
-      const lastJudgeTime = getLastJudgeTime(chatId);
-      const response = await judgeDebate(messages, question, lastJudgeTime);
+      const response = await judgeDebate(messages, question);
 
-      // Only mark as judged and reply if we got a real response (not SKIP)
-      if (response && !response.includes("📭") && !response.includes("SKIP")) {
-        markJudged(chatId);
+      // Only reply if we got a real response (not SKIP)
+      if (response && response !== "SKIP") {
         await ctx.reply(response, { link_preview_options: { is_disabled: true } });
       }
     } catch (error) {
